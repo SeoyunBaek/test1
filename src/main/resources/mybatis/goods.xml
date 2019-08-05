@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="dev.mvc.goods.GoodsDAOInter"> 
+  <!-- 상품 등록 -->
+  <insert id="create" parameterType="GoodsVO">
+    INSERT INTO goods(goodsno,
+                      diecateno, memno, title, content, price, dcprice, totprice,
+                      thumbs, files, sizes,
+                      word, visit, visible, rdate)                  
+    VALUES((SELECT NVL(MAX(goodsno), 0) + 1 as goodsno FROM goods),
+                #{diecateno}, #{memno}, #{title}, #{content}, #{price}, #{dcprice}, #{totprice},
+                #{thumbs}, #{files}, #{sizes},
+                #{word}, #{visit}, #{visible}, sysdate)  
+  </insert>
+  
+  <!-- 전체 게시글 보기 -->
+  <select id="list_all_diecate" resultType="GoodsVO">    
+    SELECT goodsno,
+              diecateno, memno, title, content, price, dcprice, totprice,
+              thumbs, files, sizes, visit, visible, rdate, word
+    FROM goods
+    ORDER BY goodsno DESC
+  </select>
+  
+  <!-- 등록된 자료수 -->
+  <select id="total_count" resultType="int">
+    SELECT COUNT(*) as count
+    FROM goods
+  </select>
+  
+  <!-- 카테고리별 목록 -->
+  <select id="list_by_diecate" resultType="GoodsVO" parameterType="int">
+    SELECT goodsno,
+              diecateno, memno, title, content, price, dcprice, totprice,
+              thumbs, files, sizes, visit, visible, rdate, word
+    FROM goods
+    WHERE diecateno = #{diecateno}
+    ORDER BY goodsno DESC
+  </select>
+  
+  <!-- 조회 -->
+  <select id="read" resultType="GoodsVO" parameterType="int">    
+    SELECT goodsno,
+              diecateno, memno, title, content, price, dcprice, totprice,
+              thumbs, files, sizes, visit, visible, rdate, word
+    FROM goods
+    WHERE goodsno = #{goodsno} 
+  </select>  
+  
+  <!-- Join 조회 -->
+  <select id="read_by_join" resultType="Goods_ReviewVO" parameterType="int">
+    SELECT c.goodsno, c.title,
+              t.writing
+    FROM goods c, review t
+    WHERE (t.reviewno=#{reviewno}) AND (c.goodsno = t.goodsno)
+  </select>
+
+  <!-- 조회수 증가 -->
+  <update id="increaseVisit" parameterType="int">
+    UPDATE goods
+    SET visit = visit + 1
+    WHERE goodsno = #{goodsno}
+  </update>
+  
+  <!-- 조회수 증가 -->
+  <update id="decreaseVisit" parameterType="int">
+    UPDATE goods 
+    SET visit = visit - 1 
+    WHERE goodsno=#{goodsno}
+  </update>
+  
+  <!-- 수정 -->
+  <update id="update" parameterType="GoodsVO">
+    UPDATE goods
+    SET title=#{title}, content=#{content},
+         price=#{price}, dcprice=#{dcprice}, totprice=#{totprice},
+         thumbs=#{thumbs}, files=#{files}, sizes=#{sizes}, word=#{word}
+    WHERE goodsno = #{goodsno} 
+  </update>  
+  
+  <!-- 삭제 -->
+  <delete id="delete" parameterType="int">
+    DELETE FROM goods
+    WHERE goodsno = #{goodsno} 
+  </delete>
+  
+  <!-- 카테고리별 검색된 레코드 목록 -->
+  <select id="list_by_diecate_search" resultType="GoodsVO" parameterType="HashMap">
+    SELECT goodsno, diecateno, title, content, totprice, 
+              thumbs, files, sizes, visit, rdate, word
+    FROM goods
+    <choose>
+      <when test="word == null or word == ''"> <!-- 검색하지 않는 경우 -->
+        WHERE diecateno=#{diecateno}
+      </when>
+      <otherwise>
+        WHERE diecateno=#{diecateno} AND word LIKE '%' || #{word} || '%'  
+      </otherwise>
+    </choose>
+    ORDER BY goodsno DESC
+  </select>
+ 
+  <!-- 카테고리별 검색된 레코드 개수 -->
+  <select id="search_count" resultType="int" parameterType="HashMap">
+    SELECT COUNT(*) as cnt
+    FROM goods
+    <choose>
+      <when test="word == null or word == ''"> <!-- 검색하지 않는 경우 -->
+        WHERE diecateno=#{diecateno}
+      </when>
+      <otherwise>
+        WHERE diecateno=#{diecateno} AND word LIKE '%' || #{word} || '%'  
+      </otherwise>
+    </choose>
+  </select>
+
+  <!-- 카테고리별 검색된 레코드 목록 + 페이징 -->
+  <select id="list_by_diecate_search_paging" resultType="GoodsVO" parameterType="HashMap">
+    SELECT goodsno, diecateno, title, content, totprice, 
+              thumbs, files, sizes, visit, rdate, word, r
+    FROM(
+             SELECT goodsno, diecateno, title, content, totprice, 
+                       thumbs, files, sizes, visit, rdate, word, rownum as r
+             FROM(
+                      SELECT goodsno, diecateno, title, content, totprice, 
+                                thumbs, files, sizes, visit, rdate, word
+                      FROM goods
+                      <choose>
+                        <when test="word == null or word == ''"> <!-- 검색하지 않는 경우 -->
+                          WHERE diecateno=#{diecateno}
+                        </when>
+                        <otherwise>
+                          WHERE diecateno=#{diecateno} AND word LIKE '%' || #{word} || '%'  
+                        </otherwise>
+                      </choose>
+                      ORDER BY goodsno DESC
+             )
+    )
+    WHERE <![CDATA[r >= #{startNum} AND r <= #{endNum}]]>
+  </select>
+  
+</mapper>

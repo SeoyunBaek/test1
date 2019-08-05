@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="dev.mvc.diecate.DiecateDAOInter"> 
+  <!-- 카테고리 등록 -->
+  <insert id="create" parameterType="DiecateVO">
+    INSERT INTO diecate(diecateno, grpno, title, seqno, visible, id, cnt, rdate)
+    VALUES((SELECT NVL(MAX(diecateno), 0) + 1 as diecateno FROM diecate),
+                #{grpno}, #{title}, #{seqno}, #{visible}, #{id}, #{cnt}, sysdate)
+  </insert>
+  
+  <!-- 목록 -->
+  <select id="list" resultType="Diecategrp_cateVO">
+    SELECT c.grpno, c.name,
+              t.diecateno, t.grpno, t.title, t.seqno, t.visible, t.id, t.cnt, t.rdate
+     FROM diecategrp c, diecate t  
+     WHERE c.grpno = t.grpno
+     ORDER BY c.grpno ASC, t.seqno ASC
+  </select>
+  
+  <!-- 카테고리 그룹번호에의한 카테고리 목록 -->
+  <select id="list_by_grpno" resultType="Diecategrp_cateVO" parameterType="int">
+    SELECT c.grpno, c.name,
+              t.diecateno, t.grpno, t.title, t.seqno, t.visible, t.id, t.cnt, t.rdate
+    FROM diecategrp c, diecate t  
+    WHERE (c.grpno = #{grpno}) AND (c.grpno = t.grpno)
+    ORDER BY c.grpno ASC, t.seqno ASC
+  </select>
+  
+  <!-- 조회 -->
+  <select id="read" resultType="DiecateVO" parameterType="int">
+    SELECT diecateno, grpno, title, seqno, visible, id, cnt, rdate
+    FROM diecate
+    WHERE diecateno = #{diecateno}
+  </select>
+  
+  <!-- Join 조회 -->
+  <select id="read_by_join" resultType="Diecategrp_cateVO" parameterType="int">
+    SELECT c.grpno, c.name,
+              t.diecateno, t.grpno, t.title, t.seqno, t.visible, t.id, t.cnt, t.rdate
+    FROM diecategrp c, diecate t
+    WHERE (t.diecateno = #{diecateno}) AND (c.grpno = t.grpno) 
+  </select>
+  
+  <select id="read_by_join_e" resultType="Diecate_EventVO" parameterType="int">
+    SELECT c.diecateno, c.title,
+              t.contents
+    FROM diecate c, event t
+    WHERE (t.diecateno=#{diecateno}) AND c.diecateno = t.diecateno
+  </select>
+  
+  <!-- 수정 -->
+  <update id="update" parameterType="DiecateVO">
+    UPDATE diecate
+    SET title = #{title}, seqno = #{seqno}, visible = #{visible}, id=#{id}
+    WHERE diecateno = #{diecateno}
+  </update>
+   
+  <!-- 삭제 -->
+  <delete id="delete" parameterType="int">
+    DELETE FROM diecate
+    WHERE diecateno = #{diecateno}
+  </delete>
+
+  <!-- 우선순위 up 10 -> 1 -->
+  <update id="update_seqno_up" parameterType="int">
+    UPDATE diecate
+    SET seqno = seqno - 1
+    WHERE diecateno = #{diecateno}
+  </update>
+
+  <!-- 우선순위 down 1 -> 10 -->
+  <update id="update_seqno_down" parameterType="int">
+    UPDATE diecate
+    SET seqno = seqno + 1
+    WHERE diecateno = #{diecateno}
+  </update>
+  
+  <!-- 자료 수 증가 -->
+  <update id="increaseCnt" parameterType="int">
+    UPDATE diecate 
+    SET cnt = cnt + 1 
+    WHERE diecateno = #{diecateno}
+  </update>
+  
+  <!-- 자료 수 감소 -->
+  <update id="decreaseCnt" parameterType="int">
+    UPDATE diecate 
+    SET cnt = cnt - 1 
+    WHERE diecateno = #{diecateno}
+  </update>
+
+</mapper>

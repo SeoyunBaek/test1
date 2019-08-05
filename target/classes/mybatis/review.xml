@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="dev.mvc.review.ReviewDAOInter">
+  <insert id="create" parameterType="ReviewVO">
+    INSERT INTO review(reviewno, 
+                                goodsno, thumbs, files, sizes, writing, 
+                                grade, grpno, 
+                                indent, ansnum, word, rdate)
+    VALUES((SELECT NVL(MAX(reviewno), 0)+1 as reviewno FROM review),
+               #{goodsno}, #{thumbs}, #{files}, #{sizes}, #{writing}, 
+               #{grade}, (SELECT NVL(MAX(grpno), 0)+1 as grpno FROM review),
+               #{indent}, #{ansnum}, #{word}, sysdate)
+  </insert>
+  
+   <!-- 전체 게시글 보기 --> <!-- list DAO Proc cont 개발해야함 -->
+  <select id="list_all_review" resultType="ReviewVO">
+     SELECT reviewno, goodsno, thumbs, files, sizes, writing, grade, grpno, indent, ansnum, word, rdate
+     FROM review
+     ORDER BY reviewno DESC
+  </select>
+  
+  <select id="total_count" resultType="int" > 
+    SELECT COUNT(*) as count
+    FROM review
+  </select>
+  
+  <select id="read" resultType="ReviewVO" parameterType="int">
+    SELECT reviewno, goodsno, thumbs, files, sizes, writing, grade, grpno, indent, ansnum, word, rdate
+    FROM review
+    WHERE reviewno=#{reviewno}
+  </select>
+  
+  <select id="read_by_join" resultType="Goods_ReviewVO" parameterType="int">
+    SELECT c.goodsno, c.title,
+              t.writing
+    FROM goods c, review t
+    WHERE (t.reviewno=#{reviewno}) AND (c.goodsno = t.goodsno)  
+  </select> 
+
+  <update id="update" parameterType="ReviewVO">
+    UPDATE review
+    SET writing=#{writing}, grade=#{grade}, thumbs=#{thumbs}, files=#{files}, sizes=#{sizes}, word=#{word}
+    WHERE reviewno=#{reviewno}
+  </update>
+  <!-- , word=#{word} -->
+  
+  <delete id="delete" parameterType="int">
+    DELETE FROM review
+    WHERE reviewno=#{reviewno}
+  </delete>
+  
+    <!-- 검색된 레코드 목록 -->
+  <select id="list_by_review_search" resultType="ReviewVO" parameterType="HashMap">
+    SELECT reviewno, goodsno, thumbs, files, sizes, writing, grade, grpno, indent, ansnum, word, rdate
+    FROM review
+    <choose>
+      <when test="word == null or word == ''"> <!-- 검색하지 않는 경우 -->
+        WHERE goodsno=#{goodsno}
+      </when>
+      <otherwise>
+        WHERE goodsno=#{goodsno} AND word LIKE '%' || #{word} || '%'  
+      </otherwise>
+    </choose>
+    ORDER BY reviewno DESC
+  </select>
+
+ <!-- 카테고리별 검색된 레코드 갯수 -->
+  <select id="search_count" resultType="int" parameterType="HashMap">
+    SELECT COUNT(*) as reviewno
+    FROM review
+    <choose>
+      <when test="word == null or word == ''"> <!-- 검색하지 않는 경우 -->
+        WHERE goodsno=#{goodsno}
+      </when>
+      <otherwise>
+        WHERE goodsno=#{goodsno} AND word LIKE '%' || #{word} || '%'  
+      </otherwise>
+    </choose>
+  </select>
+
+  <!-- 검색된 레코드 목록 + 페이징 + 답변-->
+  <select id="list_by_review_search_paging" resultType="ReviewVO" parameterType="HashMap">
+    SELECT reviewno, goodsno, thumbs, files, sizes, writing, grade, grpno, indent, ansnum, word, rdate, r
+    FROM(
+             SELECT reviewno, goodsno, thumbs, files, sizes, writing, grade, grpno, indent, ansnum, word, rdate, rownum as r
+             FROM(
+                      SELECT reviewno, goodsno, thumbs, files, sizes, writing, grade, grpno, indent, ansnum, word, rdate
+                      FROM review
+                      <choose>
+                        <when test="word == null or word == ''"> <!-- 검색하지 않는 경우 -->
+                          WHERE goodsno=#{goodsno}
+                        </when>
+                        <otherwise>
+                          WHERE goodsno=#{goodsno} AND word LIKE '%' || #{word} || '%'  
+                        </otherwise>
+                      </choose>
+                      ORDER BY reviewno DESC
+             )
+    )
+    WHERE <![CDATA[r >= #{startNum} AND r <= #{endNum}]]>
+  </select>
+  
+  <update id="increaseAnsnum" parameterType="HashMap">
+    UPDATE review
+    SET ansnum = ansnum + 1
+    WHERE grpno = #{grpno} AND ansnum > #{ansnum}  
+  </update>
+  
+</mapper>
+
+
+
+
+
+
+

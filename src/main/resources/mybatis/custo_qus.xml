@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="dev.mvc.custo.CustoDAOInter">
+  <insert id="create" parameterType="CustoVO">       
+    INSERT INTO custo_qus(custoqusno, 
+                                    diecateno, title, askcont, thumbs, files, 
+                                    sizes, replycnt, rdate, grpno, 
+                                    indent, ansnum, word, answerno, memno)
+    VALUES((SELECT NVL(MAX(custoqusno), 0)+1 as custoqusno FROM custo_qus),
+                #{diecateno}, #{title}, #{askcont}, #{thumbs}, #{files}, 
+                #{sizes}, #{replycnt}, sysdate, (SELECT NVL(MAX(grpno), 0)+1 as grpno FROM custo_qus),
+                0, 0, #{word}, #{answerno}, #{memno})
+  </insert>
+
+  <!-- 전체 게시글 보기 -->
+  <select id="list_all_custo" resultType="CustoVO">    
+     SELECT custoqusno, diecateno, title, askcont, thumbs, files, sizes, replycnt, rdate, 
+               grpno, indent, ansnum, word, answerno, memno
+     FROM custo_qus
+     ORDER BY custoqusno DESC
+  </select>
+  
+  <select id="total_count" resultType="int" > 
+    SELECT COUNT(*) as count
+    FROM custo_qus
+  </select>
+
+  <select id="read" resultType="CustoVO" parameterType="int">
+    SELECT custoqusno, diecateno, title, askcont, thumbs, files, sizes, replycnt, rdate, 
+              grpno, indent, ansnum, word, answerno, memno
+    FROM custo_qus
+    WHERE custoqusno=#{custoqusno}
+  </select>
+
+  <!-- Join 조회 -->
+  <select id="read_by_join_m" resultType="Mem_CustoVO" parameterType="int">
+    SELECT c.memno, c.name,
+              t.askcont
+    FROM mem c, custo_qus t
+    WHERE (t.custoqusno=#{custoqusno}) AND (c.memno = t.memno)  
+  </select> 
+
+  <!-- Join 조회 -->
+<!--   <select id="read_by_join_c" resultType="Custo_CtsansVO" parameterType="int">
+    SELECT c.custoqusno, c.askcont,
+              t.answer
+    FROM custo_qus c, ctsanswer t  
+    WHERE (t.answerno=#{answerno}) AND (c.custoqusno = t.custoqusno)
+  </select>  -->
+
+  <update id="update" parameterType="CustoVO">
+    UPDATE custo_qus
+    SET title=#{title}, askcont=#{askcont},
+          thumbs=#{thumbs}, files=#{files}, sizes=#{sizes}, word=#{word}
+    WHERE custoqusno=#{custoqusno}
+  </update>
+
+  <delete id="delete" parameterType="int">
+    DELETE FROM custo_qus
+    WHERE custoqusno=#{custoqusno}
+  </delete>
+
+  <!-- 검색된 레코드 목록 -->
+  <select id="list_by_custo_search" resultType="CustoVO" parameterType="HashMap">
+    SELECT custoqusno, diecateno, title, askcont, thumbs, files, sizes, replycnt, rdate, 
+              grpno, indent, ansnum, word, answerno, memno
+    FROM custo_qus
+    <choose>
+      <when test="word == null or word == ''"> <!-- 검색하지 않는 경우 -->
+        WHERE memno=#{memno}
+      </when>
+      <otherwise>
+        WHERE memno=#{memno} AND word LIKE '%' || #{word} || '%'  
+      </otherwise>
+    </choose>
+    ORDER BY custoqusno DESC
+  </select>
+
+ <!-- 카테고리별 검색된 레코드 갯수 -->
+  <select id="search_count" resultType="int" parameterType="HashMap">
+    SELECT COUNT(*) as cnt
+    FROM custo_qus
+    <choose>
+      <when test="word == null or word == ''"> <!-- 검색하지 않는 경우 -->
+        WHERE memno=#{memno}
+      </when>
+      <otherwise>
+        WHERE memno=#{memno} AND word LIKE '%' || #{word} || '%'  
+      </otherwise>
+    </choose>
+  </select>
+
+  <!-- 검색된 레코드 목록 + 페이징 + 답변-->
+  <select id="list_by_custo_search_paging" resultType="CustoVO" parameterType="HashMap">
+    SELECT custoqusno, title, askcont, thumbs, files, sizes, replycnt, rdate, memno, word, grpno, indent, ansnum r
+    FROM(
+             SELECT custoqusno, title, askcont, thumbs, files, sizes, replycnt, rdate, answerno, memno, word, grpno, indent, ansnum, rownum as r
+             FROM(
+                      SELECT custoqusno, title, askcont, thumbs, files, sizes, replycnt, rdate, answerno, memno, word, grpno, indent, ansnum
+                      FROM custo_qus
+                      <choose>
+                        <when test="word == null or word == ''"> <!-- 검색하지 않는 경우 -->
+                          WHERE memno=#{memno}
+                        </when>
+                        <otherwise>
+                          WHERE memno=#{memno} AND word LIKE '%' || #{word} || '%'  
+                        </otherwise>
+                      </choose>
+                      ORDER BY custoqusno DESC, ansnum ASC
+             )
+    )
+    WHERE <![CDATA[r >= #{startNum} AND r <= #{endNum}]]>
+  </select>
+  
+    <!-- 답변 -->
+<insert id="reply" parameterType="CustoVO">
+    INSERT INTO custo_qus(custoqusno, 
+                                    diecateno, title, askcont, thumbs, files, 
+                                    sizes, replycnt, rdate, 
+                                    word, grpno, 
+                                    indent, ansnum, answerno, memno)
+    VALUES((SELECT NVL(MAX(custoqusno), 0)+1 as custoqusno FROM custo_qus),
+                #{diecateno}, #{title}, #{askcont}, #{thumbs}, #{files}, 
+                #{sizes}, #{replycnt}, sysdate,
+                #{word}, (SELECT NVL(MAX(grpno), 0)+1 as grpno FROM custo_qus),
+                0, 0, #{word}, #{answerno}, #{memno})
+</insert>
+
+<!--   INSERT INTO ctsanswer(answerno, 
+                                  custoqusno, answer)  
+  VALUES((SELECT NVL(MAX(answerno), 0)+1 as answerno FROM ctsanswer),
+              custoqusno=#{custoqusno}, answer=#{answer})    -->
+
+  <update id="increaseAnsnum" parameterType="HashMap">
+    UPDATE custo_qus
+    SET ansnum = ansnum + 1
+    WHERE grpno = #{grpno} AND ansnum > #{ansnum}  
+  </update>
+  
+<!--   <update id="increaseAnsnum" parameterType="HashMap">
+    UPDATE custo_qus
+    SET ansnum = ansnum + 1
+    WHERE grpno = #{grpno} AND ansnum > #{ansnum}  
+  </update> -->
+
+</mapper>
+
+
+
+
+
+
+

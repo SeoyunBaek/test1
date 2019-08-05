@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="dev.mvc.employ.EmployDAOInter">
+  <insert id="create" parameterType="EmployVO">
+    INSERT INTO employ(employno,
+                                diecateno,
+                                title, contents, thumbs, files, sizes, id, rdate)
+    VALUES((SELECT NVL(MAX(employno), 0)+1 as employno FROM employ),
+               (SELECT NVL(MAX(diecateno), 0)+1 as diecateno FROM employ),
+                #{title}, #{contents}, #{thumbs}, #{files}, #{sizes}, #{id}, sysdate)
+  </insert>
+  
+    <!-- 전체 게시글 보기 --> 
+  <select id="list_all_employ" resultType="EmployVO">
+     SELECT employno, diecateno, title, contents, thumbs, files, sizes, id, rdate
+     FROM employ
+     ORDER BY employno DESC 
+  </select>
+  
+  <select id="total_count" resultType="int" > 
+    SELECT COUNT(*) as count
+    FROM employ
+  </select>
+  
+  <select id="read" resultType="EmployVO" parameterType="int">
+    SELECT employno, diecateno, title, contents, thumbs, files, sizes, id, rdate
+    FROM employ
+    WHERE employno=#{employno}
+  </select>
+
+  <update id="update" parameterType="EmployVO">
+    UPDATE employ
+    SET title=#{title}, contents=#{contents}
+    WHERE employno=#{employno}
+  </update>
+  
+  <delete id="delete" parameterType="int">
+    DELETE FROM employ
+    WHERE employno=#{employno}
+  </delete>
+  
+<!--   , word=#{word}
+
+    검색된 레코드 목록
+  <select id="list_by_review_search" resultType="ReviewVO" parameterType="HashMap">
+    SELECT reviewno, goodsno, thumbs, files, sizes, writing, grade, grpno, indent, ansnum, word, rdate
+    FROM review
+    <choose>
+      <when test="word == null or word == ''"> 검색하지 않는 경우
+        WHERE goodsno=#{goodsno}
+      </when>
+      <otherwise>
+        WHERE goodsno=#{goodsno} AND word LIKE '%' || #{word} || '%'  
+      </otherwise>
+    </choose>
+    ORDER BY reviewno DESC
+  </select>
+
+ 카테고리별 검색된 레코드 갯수
+  <select id="search_count" resultType="int" parameterType="HashMap">
+    SELECT COUNT(*) as reviewno
+    FROM review
+    <choose>
+      <when test="word == null or word == ''"> 검색하지 않는 경우
+        WHERE goodsno=#{goodsno}
+      </when>
+      <otherwise>
+        WHERE goodsno=#{goodsno} AND word LIKE '%' || #{word} || '%'  
+      </otherwise>
+    </choose>
+  </select>
+
+  검색된 레코드 목록 + 페이징 + 답변
+  <select id="list_by_review_search_paging" resultType="ReviewVO" parameterType="HashMap">
+    SELECT reviewno, goodsno, thumbs, files, sizes, writing, grade, grpno, indent, ansnum, word, rdate, r
+    FROM(
+             SELECT reviewno, goodsno, thumbs, files, sizes, writing, grade, grpno, indent, ansnum, word, rdate, rownum as r
+             FROM(
+                      SELECT reviewno, goodsno, thumbs, files, sizes, writing, grade, grpno, indent, ansnum, word, rdate
+                      FROM review
+                      <choose>
+                        <when test="word == null or word == ''"> 검색하지 않는 경우
+                          WHERE goodsno=#{goodsno}
+                        </when>
+                        <otherwise>
+                          WHERE goodsno=#{goodsno} AND word LIKE '%' || #{word} || '%'  
+                        </otherwise>
+                      </choose>
+                      ORDER BY reviewno ASC
+             )
+    )
+    WHERE <![CDATA[r >= #{startNum} AND r <= #{endNum}]]>
+  </select>
+  
+  <update id="increaseAnsnum" parameterType="HashMap">
+    UPDATE review
+    SET ansnum = ansnum + 1
+    WHERE grpno = #{grpno} AND ansnum > #{ansnum}  
+  </update> -->
+  
+</mapper>
+
+
+
+
+
+
+

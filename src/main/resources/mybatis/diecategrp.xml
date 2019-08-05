@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="dev.mvc.diecategrp.DiecategrpDAOInter"> 
+  
+  <insert id="create" parameterType="DiecategrpVO">
+    INSERT INTO diecategrp(grpno, name, seqno, visible, rdate)
+    VALUES((SELECT NVL(MAX(grpno), 0) + 1 as grpno FROM diecategrp),
+                #{name}, #{seqno}, #{visible}, sysdate)
+  </insert>
+   
+  <!-- seqno 오름차순 정렬 -->
+  <select id="list" resultType="DiecategrpVO" >
+    SELECT grpno, name, seqno, visible, TO_CHAR(rdate, 'YYYY-MM-DD HH:MI:SS') as rdate
+    FROM diecategrp
+    ORDER BY seqno ASC
+  </select> 
+   
+  <!-- 조회 -->
+  <select id="read" resultType="DiecategrpVO" parameterType="int">
+    SELECT grpno, name, seqno, visible, rdate 
+    FROM diecategrp
+    WHERE grpno = #{grpno}
+  </select> 
+   
+  <!-- 수정 -->
+  <update id="update" parameterType="DiecategrpVO">
+    UPDATE diecategrp
+    SET name=#{name}, seqno=#{seqno}, visible=#{visible}
+    WHERE grpno = 1
+  </update>
+   
+  <!-- 삭제 -->
+  <delete id="delete" parameterType="int">
+    DELETE FROM diecategrp
+    WHERE grpno = #{grpno}
+  </delete>
+
+  <!-- 우선순위 up 10 -> 1 -->
+  <update id="update_seqno_up" parameterType="int">
+    UPDATE diecategrp
+    SET seqno = seqno - 1
+    WHERE grpno=#{grpno}
+  </update>
+
+  <!-- 우선순위 down 1 -> 10 -->
+  <update id="update_seqno_down" parameterType="int">
+    UPDATE diecategrp
+    SET seqno = seqno + 1
+    WHERE grpno=#{grpno}
+  </update>
+       
+</mapper>
+
+
+
+
+
+
+
+

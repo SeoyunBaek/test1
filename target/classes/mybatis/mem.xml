@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="dev.mvc.mem.MemDAOInter">
+
+  <!-- 아이디 중복 체크 -->
+  <select id="checkId" resultType="int" parameterType="String">
+    SELECT COUNT(id) as cnt
+    FROM mem
+    WHERE id=#{id}
+</select>
+
+  <!-- 회원 가입 -->
+  <insert id="create" parameterType = "MemVO">
+    INSERT INTO mem(memno, id, passwd, name, zipcode, address1, address2, phone, email, act)
+   VALUES ((SELECT NVL(MAX(memno), 0)+1 as memno FROM mem),
+                 #{id}, #{passwd}, #{name},  #{zipcode}, #{address1}, #{address2}, #{phone}, #{email}, #{act})
+  </insert>
+  
+  <!--회원 전체 목록 -->
+  <select id="list" resultType="MemVO">
+    SELECT memno, id, passwd, name, zipcode, address1, address2, phone, email, act
+    FROM mem
+    ORDER BY memno ASC
+  </select>
+  
+  <!-- 조회 -->
+  <select id="read" resultType="MemVO" parameterType="int">
+    SELECT memno, id, passwd, name, zipcode, address1, address2, phone, email, act
+    FROM mem
+    WHERE memno = #{memno}
+  </select>
+  
+  <!-- Join 조회 -->
+  <select id="read_by_join_m" resultType="Mem_CustoVO" parameterType="int">
+  SELECT c.memno, c.name,
+            t.askcont
+  FROM mem c, custo_qus t
+  WHERE (t.custoqusno=#{custoqusno}) AND (c.memno = t.memno)  
+</select> 
+ 
+ <!-- ID로 조회 -->
+  <select id="readById" resultType="MemVO" parameterType="String">
+    SELECT memno, id, passwd, name, zipcode, address1, address2, phone, email, act
+    FROM mem
+    WHERE id = #{id}
+  </select>
+ 
+  <!-- 수정 -->
+  <update id="update" parameterType="MemVO">
+    UPDATE mem 
+    SET name=#{name}, zipcode=#{zipcode}, address1=#{address1}, address2=#{address2}, phone=#{phone}
+    WHERE memno=#{memno}
+  </update>  
+  
+  <!-- 권한의 변경 -->
+  <update id="act_update" parameterType="MemVO">
+    UPDATE mem 
+    SET  act=#{act}
+    WHERE memno=#{memno} 
+  </update>
+  
+  <!-- 패스워드 변경 -->
+  <update id="passwd_update" parameterType="HashMap">
+  UPDATE mem
+  SET passwd=#{passwd}
+  WHERE memno=#{memno}
+  </update>
+  
+  <!-- 삭제 -->
+   <delete id="delete" parameterType="int">
+     DELETE FROM mem
+     WHERE memno = #{memno}
+   </delete>
+   
+   <!-- 로그인 -->
+   <select id="login" resultType ='int' parameterType="HashMap">
+     SELECT COUNT(memno) as cnt
+     FROM mem
+     WHERE id=#{id} AND passwd=#{passwd}
+    </select>
+    
+    <!-- 검색된 레코드 목록 -->
+    <select id= "list_search" resultType = "MemVO" parameterType ="HashMap">
+    SELECT memno, id, passwd, name, zipcode, address1, address2, phone, email, act
+    FROM mem
+    <choose>
+       <when test="name == null or word == ''"> <!-- 검색하지 않는 경우 -->
+        WHERE memno=#{memno}
+      </when>
+      <otherwise>
+        WHERE memno=#{memno} AND name LIKE '%' || #{name} || '%'  
+      </otherwise>
+    </choose>
+    ORDER BY memno DESC
+  </select>
+  
+   <!-- 카테고리별 검색된 레코드 갯수 -->
+  <select id="search_count" resultType="int" parameterType="HashMap">
+    SELECT COUNT(*) as cnt
+    FROM mem
+    <choose>
+      <when test="name == null or name == ''"> <!-- 검색하지 않는 경우 -->
+        WHERE memno=#{memno}
+      </when>
+      <otherwise>
+        WHERE memno=#{memno} AND name LIKE '%' || #{name} || '%'  
+      </otherwise>
+    </choose>
+  </select>
+  
+  <!--검색된 레코드 목록 + 페이징 +답변  -->
+  <select id="list_search_paging" resultType="MemVO" parameterType="HashMap">
+    SELECT memno, id, passwd, name, zipcode, address1, address2, phone, email, act, r
+    FROM(
+         SELECT memno, id, passwd, name, zipcode, address1, address2, phone, email, act, rownum as r
+         FROM(
+                  SELECT memno, id, passwd, name, zipcode, address1, address2, phone, email, act
+                  FROM mem
+                  <choose>
+                        <when test="name == null or name == ''"> <!-- 검색하지 않는 경우 -->
+                          WHERE memno=#{memno}
+                        </when>
+                        <otherwise>
+                          WHERE memno=#{memno} AND name LIKE '%' || #{name} || '%'  
+                        </otherwise>
+                      </choose>
+                     ORDER BY memno DESC
+             )
+    )
+    WHERE <![CDATA[r >= #{startNum} AND r <= #{endNum}]]>
+    <!-- WHERE r >=1 AND r <= 3 -->
+  </select>
+  
+  <update id="increaseCnt" parameterType="int">
+    UPDATE mem 
+    SET cnt = cnt + 1 
+    WHERE memno=#{memno}
+  </update>
+  
+  <update id="decreaseCnt" parameterType="int">
+    UPDATE mem 
+    SET cnt = cnt - 1 
+    WHERE memno=#{memno}
+  </update>
+  
+ </mapper>
+ 
+ 
+ 
+ 

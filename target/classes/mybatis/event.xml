@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="dev.mvc.event.EventDAOInter">
+  <insert id="create" parameterType="EventVO">           
+    INSERT INTO event(eventno,
+                          diecateno, 
+                          title, contents, 
+                          thumbs, files, sizes, rdate, word,
+                          seqno, visible, id, cnt)
+                          
+    VALUES((SELECT NVL(MAX(eventno), 0)+1 as eventno FROM event),
+               (SELECT NVL(MAX(diecateno), 0)+1 as diecateno FROM event),
+                #{title}, #{contents},
+                #{thumbs}, #{files}, #{sizes}, sysdate, #{word},
+                #{seqno}, #{visible}, #{id}, #{cnt})      
+  </insert>
+  
+   <!-- 전체 게시글 보기 --> <!-- list DAO Proc cont 개발해야함 -->
+  <select id="list_all_event" resultType="EventVO">
+    SELECT eventno, diecateno, title, contents, thumbs, files, sizes, rdate, word, seqno, visible, id, cnt
+    FROM event
+    ORDER BY eventno DESC  
+  </select>
+  
+  <select id="total_count" resultType="int" > 
+    SELECT COUNT(*) as count
+    FROM event
+  </select>
+  
+  <select id="read" resultType="EventVO" parameterType="int">
+    SELECT eventno, diecateno, title, contents, thumbs, files, sizes, rdate, word, seqno, visible, id, cnt
+    FROM event
+    WHERE eventno=#{eventno}
+  </select>
+
+  <update id="update" parameterType="EventVO">
+    UPDATE event
+    SET title=#{title}, contents=#{contents}, thumbs=#{thumbs}, files=#{files}, sizes=#{sizes}
+    WHERE eventno=#{eventno}
+  </update>
+  <!-- , word=#{word} -->
+  
+  <delete id="delete" parameterType="int">
+    DELETE FROM event
+    WHERE eventno=#{eventno}
+  </delete>
+  
+    <!-- 검색된 레코드 목록 -->
+  <select id="list_by_event_search" resultType="EventVO" parameterType="HashMap">
+    SELECT eventno, diecateno, title, contents, thumbs, files, sizes, rdate, word, seqno, visible, id, cnt
+    FROM event
+    <choose>
+      <when test="word == null or word == ''"> <!-- 검색하지 않는 경우 -->
+        WHERE diecateno=#{diecateno}
+      </when>
+      <otherwise>
+        WHERE diecateno=#{diecateno} AND word LIKE '%' || #{word} || '%'  
+      </otherwise>
+    </choose>
+    ORDER BY eventno DESC
+  </select>
+
+ <!-- 카테고리별 검색된 레코드 갯수 -->
+  <select id="search_count" resultType="int" parameterType="HashMap">
+    SELECT COUNT(*) as eventno
+    FROM event
+    <choose>
+      <when test="word == null or word == ''"> <!-- 검색하지 않는 경우 -->
+        WHERE diecateno=#{diecateno}
+      </when>
+      <otherwise>
+        WHERE diecateno=#{diecateno} AND word LIKE '%' || #{word} || '%'  
+      </otherwise>
+    </choose>
+  </select>
+
+  <!-- 검색된 레코드 목록 + 페이징 + 답변-->
+  <select id="list_by_event_search_paging" resultType="EventVO" parameterType="HashMap">
+    SELECT eventno, diecateno, title, contents, thumbs, files, sizes, rdate, word, seqno, visible, id, cnt, r
+    FROM(
+             SELECT eventno, diecateno, title, contents, thumbs, files, sizes, rdate, word, seqno, visible, id, cnt, rownum as r
+             FROM(
+                      SELECT eventno, diecateno, title, contents, thumbs, files, sizes, rdate, word, seqno, visible, id, cnt
+                      FROM event
+                      <choose>
+                        <when test="word == null or word == ''"> <!-- 검색하지 않는 경우 -->
+                          WHERE diecateno=#{diecateno}
+                        </when>
+                        <otherwise>
+                          WHERE diecateno=#{diecateno} AND word LIKE '%' || #{word} || '%'  
+                        </otherwise>
+                      </choose>
+                      ORDER BY eventno ASC
+             )
+    )
+    WHERE <![CDATA[r >= #{startNum} AND r <= #{endNum}]]>
+  </select>
+  
+<!--   <update id="increaseAnsnum" parameterType="HashMap">
+    UPDATE review
+    SET ansnum = ansnum + 1
+    WHERE grpno = #{grpno} AND ansnum > #{ansnum}  
+  </update> -->
+  
+</mapper>
+
+
+
+
+
+
+
